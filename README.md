@@ -1,18 +1,18 @@
-<!-- Core Pipeline Status Badges -->
 [![Pipeline Status](https://img.shields.io/badge/MLOps__Pipeline-Passing-4c1?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/Trojan3877/AWS-SageMaker-Snowflake-ML-Pipeline/actions)
 [![Data Engine](https://img.shields.io/badge/Snowflake-Verified_Source-00A9E0?style=for-the-badge&logo=snowflake&logoColor=white)](https://www.snowflake.com/)
 [![Compute Engine](https://img.shields.io/badge/AWS_SageMaker-Nominal_Compute-FF9900?style=for-the-badge&logo=amazonsagemaker&logoColor=white)](https://aws.amazon.com/sagemaker/)
-
-<!-- Architecture & Language Quality Badges -->
 [![Python Version](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![Architecture Pattern](https://img.shields.io/badge/Design_Pattern-Multi--Agent_Supervisor-blueviolet?style=flat-square&logo=diagrams.net&logoColor=white)](#system-design--architecture-flow-chart)
 [![Infrastructure Strategy](https://img.shields.io/badge/Infrastructure-Ephemeral_Compute-8A2BE2?style=flat-square&logo=amazon-ec2&logoColor=white)](#architectural-breakdown)
-
-<!-- Security, Validation & Code Quality Badges -->
 [![Security Assessment](https://img.shields.io/badge/Security-SecOps_Validated-success?style=flat-square&logo=github&logoColor=white)](#q2-how-does-the-system-handle-security-and-authentication-vectors-securely-between-public-execution-layers-and-cloud-infrastructure)
 [![Data Validation](https://img.shields.io/badge/Data_Validation-PSI_Gated-orange?style=flat-square&logo=pydantic&logoColor=white)](#q3-what-prevents-data-leakage-or-model-decay-when-processing-automated-streaming-updates)
 [![License Model](https://img.shields.io/badge/License-MIT-green?style=flat-square)](https://choosealicense.com/licenses/mit/)
-
+[![MLOps Hygiene Matrix](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml/badge.svg)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml)
+![Pipeline Hygiene](https://img.shields.io/badge/Pipeline%20Hygiene-Enforced-brightgreen?style=flat-square&logo=github)
+![Data Governance](https://img.shields.io/badge/Data%20Governance-Snowflake%20%7C%20Snowpark-blue?style=flat-square&logo=snowflake)
+![Orchestration Engine](https://img.shields.io/badge/Orchestration-AWS%20SageMaker-orange?style=flat-square&logo=amazonsagemaker)
+![SAST Scanning](https://img.shields.io/badge/SAST%20Scan-CodeQL%20Passing-emerald?style=flat-square&logo=githubactions)
+![Security Shield](https://img.shields.io/badge/Security%20Shield-TruffleHog%20Active-red?style=flat-square&logo=shield)
 
 
 
