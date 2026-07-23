@@ -71,3 +71,52 @@ Verify Application Configuration Targets:Open config/agent_config.yaml and verif
 
  
  Systems Engineering Q&AQ1: Why use independent, specialized agents over standard workflow schedulers like AWS Step Functions or Apache Airflow?Traditional workflow tools operate on rigid, hard-coded Directed Acyclic Graphs (DAGs). If a database step returns an unexpected type, the whole pipeline breaks down. This multi-agent setup uses a dynamic event loop.Each agent evaluates its own state context. If Snowflake experiences structural anomalies, the SnowflakeMonitorAgent quarantines ingestion and signals the Supervisor to modify upstream configurations—without crashing downstream instances or generating unnecessary cloud compute costs.Q2: How does the system handle security and authentication vectors securely between public execution layers and cloud infrastructure?This architecture isolates credentials. The GitHub runner does not store permanent cloud keys. Instead, it pulls short-lived tokens from your repo secrets into isolated runtime scopes.Furthermore, data traffic between Snowflake and AWS is completely isolated using encrypted channels. Database queries are limited to specific service roles, preventing SQL injection vulnerabilities.Q3: What prevents data leakage or model decay when processing automated streaming updates?The system uses strict validation gates. The SnowflakeMonitorAgent calculates the Population Stability Index (PSI) before moving data to S3. If the data distribution diverges sharply from the training baseline, the system flags a potential data anomaly.Additionally, new training passes require explicit validation passes against the baseline models. A newly trained model is only promoted if it beats the active production baseline in ROC-AUC performance.Q4: How is infrastructure spend optimized when using high-performance compute instances?We eliminate persistent servers. Snowflake virtual warehouses utilize an auto-suspend duration of exactly 60 seconds to avoid unnecessary costs during idle periods.On the AWS side, training is handled entirely by ephemeral clusters that spinning up only for the duration of the training loop. Once the model outputs its artifacts to S3, the underlying EC2 resources are immediately deallocated.
+
+
+## Production Readiness Guide
+
+> This section is the portfolio audit entry point for **AWS-SageMaker-Snowflake-ML-Pipeline**. It describes an engineering promotion path; it is not a claim that the repository is already production-authorized.
+
+[![CI](https://img.shields.io/github/actions/workflow/status/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/ci.yml?branch=main&label=CI)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions) [![License](https://img.shields.io/github/license/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/blob/main/LICENSE)
+
+### Architecture flowchart
+
+```mermaid
+flowchart LR
+    Client --> API[.NET service] --> Domain[Domain layer] --> Store[(Persistent state)]
+```
+
+### Quickstart and local validation
+
+The supported local path should be reproducible from a clean checkout. The inferred stack for this repository is **C#/.NET**.
+
+```bash
+dotnet restore && dotnet build --configuration Release
+dotnet test --configuration Release
+```
+
+If the project uses external services, model artifacts, cloud credentials, or private data, start them through documented local fixtures or mocks. Never place secrets or identifiable records in the repository.
+
+### Research-style metrics and benchmarks
+
+| Evidence | Required record |
+|---|---|
+| Correctness | Test command, commit SHA, runtime, and pass/fail result |
+| Performance | Warm-up, sample count, concurrency, median, p95, p99, throughput, and memory |
+| Data/model quality | Dataset version, split strategy, leakage controls, calibration, subgroup results, and uncertainty |
+| Runtime | Image digest, health-check latency, resource limits, and rollback target |
+| Security | Dependency, secret, SAST, container, and SBOM results |
+
+A benchmark number belongs in a versioned artifact tied to a commit and hardware/runtime description. Engineering benchmarks must not be presented as clinical, financial, safety, or model-quality validation without the appropriate domain evidence.
+
+### Extended Q&A
+
+**What is production-ready for this repository?**  
+A reproducible build, tested public contract, controlled configuration, observable runtime, documented security boundary, versioned artifacts, and a tested rollback path.
+
+**What must remain explicit?**  
+The intended use, excluded use, data/credential handling, model or algorithm limitations, and which metrics are measured versus aspirational.
+
+**What should be completed next?**  
+Use the linked production-readiness issue for this repository as the checklist. Resolve missing tests, deployment instructions, observability, supply-chain controls, and release evidence before attaching a production claim.
+
