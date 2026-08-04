@@ -1,19 +1,75 @@
-# config/agent_config.yaml
+name: Offline verification
 
-snowflake:
-  account: "your_account_locator"
-  warehouse: "COMPUTE_WH"
-  database: "PROD_DB"
-  schema: "PUBLIC"
-  table_name: "CUSTOMER_FEATURES"
-  drift_threshold_psi: 0.1  # Population Stability Index limit
-  min_new_records_trigger: 10000
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
-sagemaker:
-  region: "us-east-1"
-  role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
-  image_uri: "123456789012.dkr.ecr.us-east-1.amazonaws.com/xgboost-production:latest"
-  instance_type: "ml.m5.xlarge"
-  instance_count: 1
-  s3_output_path: "s3://my-snowflake-sagemaker-pipeline-bucket/models/"
-  target_accuracy_threshold: 0.88
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+
+concurrency:
+  group: offline-verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install "ruff>=0.8,<1"
+      - run: |
+          python -m compileall -q agents scripts src tests
+          ruff check --select=E9,F agents scripts src tests
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas scikit-learn snowflake-connector-python boto3 "PyYAML>=6,<7" pytest
+      - run: pytest -q
+
+  config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python -c "from agents.config import load_config; load_config('config/agent_config.yaml')"
+
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: |
+          printf '%s' '[{"MetricName":"validation:roc_auc","Value":0.91}]' > final-metrics.json
+          GITHUB_SHA="${{ github.sha }}" python -m scripts.record_metric_evidence --metrics-json final-metrics.json --job-name ci-fixture --output promotion-evidence.json
+          python -c "import json; assert json.load(open('promotion-evidence.json'))['promotion_evidence']['promotable']"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: promotion-evidence
+          path: promotion-evidence.json

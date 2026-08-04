@@ -10,3 +10,4 @@ sagemaker
 flask
 python-dotenv
 xgboost
+PyYAML>=6,<7

@@ -1,170 +1,75 @@
-name: "MLOps Pipeline Hygiene & Model Verification Matrix"
+name: MLOps Pipeline Verification Matrix
 
 on:
   push:
-    branches: [ "main", "development" ]
+    branches: [main, development]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
-  security-events: write
+  contents: read
+
+env:
+  PYTHONPATH: ${{ github.workspace }}
+
+concurrency:
+  group: mlops-verification-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # 1. Code Quality Assurance / Code Hygiene Enforcement
-  code-hygiene:
-    name: "Code Quality Assurance / Code Hygiene Enforcement"
+  code-quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python Environment
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+      - run: python -m pip install "ruff>=0.8,<1"
+      - run: |
+          python -m compileall -q agents scripts src tests
+          ruff check --select=E9,F agents scripts src tests
 
-      - name: Install Linting Suite
-        run: pip install ruff black
-
-      - name: Enforce Code Style & Linting Contracts
-        run: |
-          black --check . || echo "Formatting adjustments needed locally via 'black .'"
-          ruff check . || echo "Linting anomalies isolated."
-
-  # 2. Automated Release Engineering / Construct Semantic Version Tags
-  release-engineering:
-    name: "Automated Release Engineering / Construct Semantic Version Tags"
-    needs: [code-hygiene]
+  test-suite:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          python -m pip install --upgrade pip
+          python -m pip install pandas scikit-learn snowflake-connector-python boto3 "PyYAML>=6,<7" pytest
+      - run: pytest -q
 
-      - name: Compute Next Semantic Version
-        id: versioning
-        uses: anothrNick/github-tag-action@1.64.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WITH_V: true
-          DEFAULT_BUMP: patch
-          DRY_RUN: true
-
-      - name: Output Release Tag
-        run: echo "MLOps Engine Semantic Tag engineered successfully."
-
-  # 3. Continuous Integration & Telemetry / Pipeline Step Analysis Matrix
-  pipeline-step-matrix:
-    name: "Continuous Integration & Telemetry / Pipeline Step Analysis Matrix"
-    needs: [code-hygiene]
+  configuration-contract:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11']
+    timeout-minutes: 10
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Spin up Environment Matrix (${{ matrix.python-version }})
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python -c "from agents.config import load_config; load_config('config/agent_config.yaml')"
 
-      - name: Install Matrix Dependencies
-        run: |
-          if [ -f "requirements.txt" ]; then pip install -r requirements.txt; fi
-          pip install pytest sagemaker snowflake-snowpark-python
-
-      - name: Run Pipeline Component Verification Tests
-        run: |
-          if [ -d "tests/unit" ]; then
-            pytest tests/unit/ -v
-          else
-            echo "No component unit tests found yet. Skipping pipeline step validation loops."
-          fi
-
-  # 4. Performance Benchmarking / Ingestion & Query Latency Tracking
-  latency-tracking:
-    name: "Performance Benchmarking / Ingestion & Query Latency Tracking"
-    needs: [pipeline-step-matrix]
+  metric-evidence-contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Initialize Benchmarking Environment
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install Benchmarking Harness
-        run: pip install pytest-benchmark
-
-      - name: Track Snowpark Dataframe & Real-time Inference Latency
-        run: |
-          echo "Executing performance profiles for Snowflake push-down operations and SageMaker payload sizes..."
-          echo "Performance validation completed. Cross-cloud network overhead is optimized."
-
-  # 5. SAST Code Scan / Custom Code Flaw Analysis
-  sast-scan:
-    name: "SAST Code Scan / Custom Code Flaw Analysis"
-    needs: [code-hygiene]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL Analysis Engine
-        uses: github/codeql-action/init@v3
+          python-version: "3.11"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: |
+          printf '%s' '[{"MetricName":"validation:roc_auc","Value":0.91}]' > final-metrics.json
+          GITHUB_SHA="${{ github.sha }}" python -m scripts.record_metric_evidence --metrics-json final-metrics.json --job-name ci-fixture --output promotion-evidence.json
+          python -c "import json; assert json.load(open('promotion-evidence.json'))['promotion_evidence']['promotable']"
+      - uses: actions/upload-artifact@v4
         with:
-          languages: 'python'
-
-      - name: Perform Abstract Syntax Tree (AST) Flaw Scan
-        uses: github/codeql-action/analyze@v3
-
-  # 6. Security Analysis / Dependency & Secret Shield
-  security-shield:
-    name: "Security Analysis / Dependency & Secret Shield"
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run Secret Scanning Guard
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ""
-          head: HEAD
-          extra_args: --only-verified
-
-  # 7. Ingestion Schema Validation / Verify Feature & Hyperparameter Contracts
-  ml-contract-validation:
-    name: "Ingestion Schema Validation / Verify ML Contracts"
-    needs: [code-hygiene]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Initialize Environment
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Schema Validation Tools
-        run: pip install pydantic
-
-      - name: Verify Hyperparameters and Feature Data Schemas
-        run: |
-          echo "Validating pipeline training configuration YAMLs and feature matrix contracts against Pydantic schemas..."
-          if [ -d "tests/schemas" ]; then
-            python -m unittest discover -s tests/schemas/ -p "test_pipeline_configs.py"
-          else
-            echo "Pipeline configuration schema assertions not initialized yet. Skipping step."
-          fi
+          name: promotion-evidence
+          path: promotion-evidence.json

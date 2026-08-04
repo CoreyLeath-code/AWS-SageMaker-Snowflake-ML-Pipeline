@@ -1,0 +1,18 @@
+snowflake:
+  account: "your_account_locator"
+  warehouse: "COMPUTE_WH"
+  database: "PROD_DB"
+  schema: "PUBLIC"
+  table_name: "CUSTOMER_FEATURES"
+  drift_threshold_psi: 0.1
+  min_new_records_trigger: 10000
+
+sagemaker:
+  region: "us-east-1"
+  role_arn: "arn:aws:iam::123456789012:role/SageMakerExecutionRole"
+  image_uri: "123456789012.dkr.ecr.us-east-1.amazonaws.com/xgboost-production:latest"
+  instance_type: "ml.m5.xlarge"
+  instance_count: 1
+  s3_output_path: "s3://my-snowflake-sagemaker-pipeline-bucket/models/"
+  validation_metric_name: "validation:roc_auc"
+  target_accuracy_threshold: 0.88
