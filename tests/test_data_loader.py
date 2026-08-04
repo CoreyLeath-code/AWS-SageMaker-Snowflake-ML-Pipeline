@@ -1,6 +1,5 @@
 # tests/test_data_loader.py
 
-import pytest
 import pandas as pd
 from src import data_loader
 
