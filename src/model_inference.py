@@ -1,6 +1,5 @@
 # src/model_inference.py
 
-import pandas as pd
 import joblib
 import snowflake.connector
 import os
