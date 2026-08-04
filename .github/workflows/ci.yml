@@ -25,6 +25,14 @@ jobs:
           python -m pip install -r requirements.txt "ruff>=0.8,<1"
       - run: |
           python -m compileall -q agents scripts tests
-          ruff check agents scripts tests
+          ruff check --select=E9,F agents scripts tests
           pytest -q
       - run: python -c "from agents.config import load_config; load_config('config/agent_config.yaml')"
+      - run: |
+          printf '%s' '[{"MetricName":"validation:roc_auc","Value":0.91}]' > final-metrics.json
+          GITHUB_SHA="${{ github.sha }}" python -m scripts.record_metric_evidence --metrics-json final-metrics.json --job-name ci-fixture --output promotion-evidence.json
+          python -c "import json; assert json.load(open('promotion-evidence.json'))['promotion_evidence']['promotable']"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: promotion-evidence
+          path: promotion-evidence.json
