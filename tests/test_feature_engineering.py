@@ -1,6 +1,5 @@
 # tests/test_feature_engineering.py
 
-import pytest
 import pandas as pd
 from src.feature_engineering import preprocess_data
 
