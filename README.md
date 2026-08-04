@@ -1,6 +1,8 @@
 # AWS SageMaker + Snowflake MLOps Pipeline
 
 [![Offline verification](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/ci.yml)
+[![MLOps verification matrix](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB?logo=python&logoColor=white)
 [![License](https://img.shields.io/github/license/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline)](LICENSE)
 
 A research-oriented example that monitors Snowflake metadata and conditionally requests an AWS SageMaker training job.
