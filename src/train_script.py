@@ -1,9 +1,7 @@
 # src/train_script.py
 
-import argparse
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score
 import joblib
 import os
 
