@@ -1,122 +1,68 @@
-[![Pipeline Status](https://img.shields.io/badge/MLOps__Pipeline-Passing-4c1?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/Trojan3877/AWS-SageMaker-Snowflake-ML-Pipeline/actions)
-[![Data Engine](https://img.shields.io/badge/Snowflake-Verified_Source-00A9E0?style=for-the-badge&logo=snowflake&logoColor=white)](https://www.snowflake.com/)
-[![Compute Engine](https://img.shields.io/badge/AWS_SageMaker-Nominal_Compute-FF9900?style=for-the-badge&logo=amazonsagemaker&logoColor=white)](https://aws.amazon.com/sagemaker/)
-[![Python Version](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Architecture Pattern](https://img.shields.io/badge/Design_Pattern-Multi--Agent_Supervisor-blueviolet?style=flat-square&logo=diagrams.net&logoColor=white)](#system-design--architecture-flow-chart)
-[![Infrastructure Strategy](https://img.shields.io/badge/Infrastructure-Ephemeral_Compute-8A2BE2?style=flat-square&logo=amazon-ec2&logoColor=white)](#architectural-breakdown)
-[![Security Assessment](https://img.shields.io/badge/Security-SecOps_Validated-success?style=flat-square&logo=github&logoColor=white)](#q2-how-does-the-system-handle-security-and-authentication-vectors-securely-between-public-execution-layers-and-cloud-infrastructure)
-[![Data Validation](https://img.shields.io/badge/Data_Validation-PSI_Gated-orange?style=flat-square&logo=pydantic&logoColor=white)](#q3-what-prevents-data-leakage-or-model-decay-when-processing-automated-streaming-updates)
-[![License Model](https://img.shields.io/badge/License-MIT-green?style=flat-square)](https://choosealicense.com/licenses/mit/)
-[![MLOps Hygiene Matrix](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml/badge.svg)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/sagemaker-pipeline-hygiene.yml)
-![Pipeline Hygiene](https://img.shields.io/badge/Pipeline%20Hygiene-Enforced-brightgreen?style=flat-square&logo=github)
-![Data Governance](https://img.shields.io/badge/Data%20Governance-Snowflake%20%7C%20Snowpark-blue?style=flat-square&logo=snowflake)
-![Orchestration Engine](https://img.shields.io/badge/Orchestration-AWS%20SageMaker-orange?style=flat-square&logo=amazonsagemaker)
-![SAST Scanning](https://img.shields.io/badge/SAST%20Scan-CodeQL%20Passing-emerald?style=flat-square&logo=githubactions)
-![Security Shield](https://img.shields.io/badge/Security%20Shield-TruffleHog%20Active-red?style=flat-square&logo=shield)
+# AWS SageMaker + Snowflake MLOps Pipeline
 
+[![Offline verification](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline)](LICENSE)
 
+A research-oriented example that monitors Snowflake metadata and conditionally requests an AWS SageMaker training job.
 
+> This is not an approved automated deployment system. Do not connect it to production data, models, or credentials without independent security, model-risk, and operational review.
 
-AWS-SageMaker-Snowflake-ML-PipelineAn autonomous, event-driven, production-grade MLOps orchestrator that decouples enterprise storage from high-performance training computing. The architecture features an internal multi-agent coordination layer executing telemetry auditing, dataset validation, statistical drift verification, and automatic model deployment cycles.🏛️ System Design & Architecture Flow ChartThis platform decouples storage compute (Snowflake Virtual Warehouses) from model training compute (AWS SageMaker Core Instances). It implements a stateful supervisor pattern that tracks structural dataset drift, triggers ephemeral infrastructure transformations, and writes operation ledger outputs via GitOps mechanisms back to source control.Plaintext[Enterprise Data Warehouse]           [MLOps Control Plane]           [High-Performance Compute]
-   +-------------------+              +--------------------+              +--------------------+
-   |                   |              |                    |              |                    |
-   | Snowflake Stage   | ------------ | Snowflake Monitor  |              |                    |
-   | Data Mutations    |  Metadata    | Agent              |              |                    |
-   +-------------------+  Inspections +--------------------+              |                    |
-             |                                  |                         |                    |
-             | Data Dump                        | Retrain                 |                    |
-             v                                  v                         |                    |
-   +-------------------+              +--------------------+              |                    |
-   |                   |              |                    |   Trigger    |                    |
-   | Amazon S3 Bucket  | <----------- | SageMaker Ops      | -----------> | AWS SageMaker      |
-   | (Feature Store)   |  Pull Data   | Agent              |              | Ephemeral Cluster  |
-   +-------------------+              +--------------------+              +--------------------+
-                                                |                                   |
-                                                | Check Metrics                     | Export Model
-                                                v                                   v
-                                      +--------------------+              +--------------------+
-                                      |                    |  Write Logs  |                    |
-                                      | MLOps Supervisor   | -----------> | GitOps Ledger      |
-                                      | State Machine      |              | (DailyLog.md)      |
-                                      +--------------------+              +--------------------+
+## Implemented controls
 
+- Non-secret agent configuration is validated from `config/agent_config.yaml`; credentials remain environment-provided.
+- Promotion fails closed: a completed SageMaker job must return a finite configured metric in `FinalMetricDataList`.
+- Offline tests and GitHub Actions validate the configuration and decision logic without AWS or Snowflake access.
+- A JSON evidence utility records the metric payload hash, source commit, runtime, threshold, and decision.
 
-System Data & Control Flow Description
-Ingestion Evaluation: The SnowflakeMonitorAgent initiates the cycle by connecting to your database layer. It evaluates micro-batch mutations and tracks structural dataset characteristics.
+## Local verification
 
-State Consensus: Telemetry values pass to the central MLOpsSupervisor. If data mutations exceed the configured threshold or structural drift is detected, the workflow transitions from an Idle state to an Execution trigger.
-
-Compute Allocation: The SageMakerOpsAgent targets the intermediate storage layer (Amazon S3 Feature Store) and provisions an isolated, ephemeral compute instance inside AWS SageMaker to run the training job container.
-
-Validation Gate & Promotion: Once training concludes, the supervisor inspects the resultant performance metrics against your validation baselines (e.g., ROC-AUC targets).
-
-GitOps Ledger Commit: The execution outcome (SUCCESS, WARNING, or FAILED) along with a timestamp is written to DailyLog.md. The GitHub Actions runner then automatically stages, commits, and pushes this update back to your repo
-
-
-
-
-
-Architectural BreakdownData Telemetry: New micro-batches hit Snowflake tables. The SnowflakeMonitorAgent interrogates staging metadata using optimized analytical cursors, tracking volume spikes and statistical schema variants.Data Marshaling: Upon crossing batch thresholds, feature variables are mirrored to an intermediate, encrypted Amazon S3 cold storage bucket acting as an immutable Feature Store layer.Compute Allocation: The SageMakerOpsAgent allocates isolated, application-specific EC2 instances inside AWS SageMaker. The instances pull raw features out of S3, execute the distribution calculations, and terminate instantly upon model completion.State Consensus: The MLOpsSupervisor checks downstream objective variables against the current production model. If conditions match, it writes logs to DailyLog.md and signals deployment handlers.📊 Evaluation & Operational MetricsThe system monitors training efficiency, model quality, and infrastructure costs to prevent budget overruns during automated execution blocks.MetricTarget BaselineUpper Bound TriggerMitigation StrategyStatistical Feature Drift (PSI)$< 0.10$$\ge 0.20$Auto-trigger retraining on newer feature slicesModel Classification (ROC-AUC)$> 0.88$$< 0.85$Quarantine deployment; alert engineeringCompute Training Convergence$< 1200\text{s}$$> 3600\text{s}$Terminate task to eliminate cost overrun risksSnowflake Warehouse Ingestion Run$< 45\text{s}$$> 180\text{s}$Scale down warehouse layer; check query skew⚡ Quick Start InstructionsFollow these instructions to spin up the multi-agent control layer locally or within your development environments.Prerequisite ChecklistPython 3.11.x runtime installed locally.Access credentials for Snowflake (ACCOUNT, USER, PASSWORD).AWS IAM credentials configured with specific permissions for SageMaker execution and S3 read/write.Local Initialization SequenceClone the Repository:Bashgit clone https://github.com/Trojan3877/AWS-SageMaker-Snowflake-ML-Pipeline.git
-
-
-cd AWS-SageMaker-Snowflake-ML-Pipeline
-Environment Assembly:Bashpython -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-pip install -r requirements.txt
-Secure Environment Variables Configuration:Create a .env file at the root directory of your project:Code snippetSNOWFLAKE_USER="your_secure_username"
-SNOWFLAKE_PASSWORD="your_secure_password"
-AWS_ACCESS_KEY_ID="AKIAXXXXXXXXXXXXXXXX"
-AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-Verify Application Configuration Targets:Open config/agent_config.yaml and verify your cloud account specifications, paths, identifiers, and performance barriers match your target parameters.Run the Simulation Script:Bashpython agents/supervisor.py
-
- 
- Systems Engineering Q&AQ1: Why use independent, specialized agents over standard workflow schedulers like AWS Step Functions or Apache Airflow?Traditional workflow tools operate on rigid, hard-coded Directed Acyclic Graphs (DAGs). If a database step returns an unexpected type, the whole pipeline breaks down. This multi-agent setup uses a dynamic event loop.Each agent evaluates its own state context. If Snowflake experiences structural anomalies, the SnowflakeMonitorAgent quarantines ingestion and signals the Supervisor to modify upstream configurations—without crashing downstream instances or generating unnecessary cloud compute costs.Q2: How does the system handle security and authentication vectors securely between public execution layers and cloud infrastructure?This architecture isolates credentials. The GitHub runner does not store permanent cloud keys. Instead, it pulls short-lived tokens from your repo secrets into isolated runtime scopes.Furthermore, data traffic between Snowflake and AWS is completely isolated using encrypted channels. Database queries are limited to specific service roles, preventing SQL injection vulnerabilities.Q3: What prevents data leakage or model decay when processing automated streaming updates?The system uses strict validation gates. The SnowflakeMonitorAgent calculates the Population Stability Index (PSI) before moving data to S3. If the data distribution diverges sharply from the training baseline, the system flags a potential data anomaly.Additionally, new training passes require explicit validation passes against the baseline models. A newly trained model is only promoted if it beats the active production baseline in ROC-AUC performance.Q4: How is infrastructure spend optimized when using high-performance compute instances?We eliminate persistent servers. Snowflake virtual warehouses utilize an auto-suspend duration of exactly 60 seconds to avoid unnecessary costs during idle periods.On the AWS side, training is handled entirely by ephemeral clusters that spinning up only for the duration of the training loop. Once the model outputs its artifacts to S3, the underlying EC2 resources are immediately deallocated.
-
-
-## Production Readiness Guide
-
-> This section is the portfolio audit entry point for **AWS-SageMaker-Snowflake-ML-Pipeline**. It describes an engineering promotion path; it is not a claim that the repository is already production-authorized.
-
-[![CI](https://img.shields.io/github/actions/workflow/status/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/ci.yml?branch=main&label=CI)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/actions) [![License](https://img.shields.io/github/license/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline)](https://github.com/CoreyLeath-code/AWS-SageMaker-Snowflake-ML-Pipeline/blob/main/LICENSE)
-
-### Architecture flowchart
-
-```mermaid
-flowchart LR
-    Client --> API[.NET service] --> Domain[Domain layer] --> Store[(Persistent state)]
-```
-
-### Quickstart and local validation
-
-The supported local path should be reproducible from a clean checkout. The inferred stack for this repository is **C#/.NET**.
+Python 3.11 is used in CI.
 
 ```bash
-dotnet restore && dotnet build --configuration Release
-dotnet test --configuration Release
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m compileall -q agents scripts tests
+pytest -q
 ```
 
-If the project uses external services, model artifacts, cloud credentials, or private data, start them through documented local fixtures or mocks. Never place secrets or identifiable records in the repository.
+Running the supervisor requires reviewed AWS identity, Snowflake credentials, network access, IAM policy, and data-governance controls. The test suite does not make cloud calls.
 
-### Research-style metrics and benchmarks
+## Reproducible metric evidence
 
-| Evidence | Required record |
-|---|---|
-| Correctness | Test command, commit SHA, runtime, and pass/fail result |
-| Performance | Warm-up, sample count, concurrency, median, p95, p99, throughput, and memory |
-| Data/model quality | Dataset version, split strategy, leakage controls, calibration, subgroup results, and uncertainty |
-| Runtime | Image digest, health-check latency, resource limits, and rollback target |
-| Security | Dependency, secret, SAST, container, and SBOM results |
+The promotion policy reads `sagemaker.validation_metric_name` and `target_accuracy_threshold` from the checked-in configuration. It never substitutes a simulated score.
 
-A benchmark number belongs in a versioned artifact tied to a commit and hardware/runtime description. Engineering benchmarks must not be presented as clinical, financial, safety, or model-quality validation without the appropriate domain evidence.
+```bash
+python -m scripts.record_metric_evidence \
+  --config config/agent_config.yaml \
+  --metrics-json path/to/final-metrics.json \
+  --job-name training-job-name \
+  --output evidence/promotion.json
+```
 
-### Extended Q&A
+The resulting JSON contains a SHA-256 hash of the supplied metrics payload, `GITHUB_SHA` when available, job name, Python/platform data, metric name/value, threshold, and promotion decision.
 
-**What is production-ready for this repository?**  
-A reproducible build, tested public contract, controlled configuration, observable runtime, documented security boundary, versioned artifacts, and a tested rollback path.
+| Metric / benchmark | Status | Reproducible record |
+|---|---|---|
+| Promotion metric | Measured only from a SageMaker result | `promotion_evidence.metric_name`, `metric_value`, `threshold`, `promotable` |
+| Input integrity | Measured | `metric_payload_sha256` |
+| Source provenance | Measured | `training_commit` |
+| Runner environment | Measured | `runner` |
+| Training latency, cost, ROC-AUC, drift, fairness | Not published | Require approved dataset and environment-specific study |
 
-**What must remain explicit?**  
-The intended use, excluded use, data/credential handling, model or algorithm limitations, and which metrics are measured versus aspirational.
+No numeric model-quality result is published in this README. CI emits evidence using a fixed fixture only to verify the artifact format; it is not a model-quality finding.
 
-**What should be completed next?**  
-Use the linked production-readiness issue for this repository as the checklist. Resolve missing tests, deployment instructions, observability, supply-chain controls, and release evidence before attaching a production claim.
+## Configuration
 
+Edit [config/agent_config.yaml](config/agent_config.yaml) for non-secret settings. Set `AGENT_CONFIG_PATH` to use another approved configuration. Keep secrets in an approved secret manager or environment; never commit them.
+
+## Limitations
+
+- A completed SageMaker job is not, by itself, deployment approval.
+- The drift check is an example control, not a complete data-quality or fairness assessment.
+- CI intentionally avoids cloud calls; cloud integration needs a separately governed environment.
+
+## License
+
+MIT.
