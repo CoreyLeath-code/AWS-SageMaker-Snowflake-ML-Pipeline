@@ -1,20 +1,27 @@
-# Dockerfile
+# Container image for the portfolio MLOps service.
 
-# 1. Base image with Python
-FROM python:3.9-slim
+FROM python:3.11-slim
 
-# 2. Set working directory
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
 WORKDIR /app
 
-# 3. Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Some transitive dependencies (for example greenlet) may require a native
+# extension build when a compatible wheel is unavailable. Install the minimal
+# build toolchain for dependency installation, then remove it from the runtime
+# layer after pip completes.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# 4. Copy the rest of the application code
+COPY requirements.txt .
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-# 5. Expose the port the Flask API listens on
 EXPOSE 8080
 
-# 6. Default command to launch the service
 CMD ["python", "app.py"]
