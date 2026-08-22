@@ -146,7 +146,7 @@ git tag -a v1.0.0 -m "AWS SageMaker Snowflake ML Pipeline v1.0.0"
 git push origin v1.0.0
 ```
 
-## L6 engineering review
+Engineering review
 
 The strongest part of the current design is the fail-closed promotion boundary. The main gaps before a production-readiness claim are stronger Snowflake query safety and failure semantics, a real validated drift detector, explicit SageMaker wait/poll/timeout behavior, immutable training-data provenance, held-out model evaluation, deployment approval separation, IAM least-privilege evidence, end-to-end observability, and release provenance beyond checksums. See [L6_AUDIT.md](L6_AUDIT.md).
 
