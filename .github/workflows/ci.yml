@@ -73,3 +73,16 @@ jobs:
         with:
           name: promotion-evidence
           path: promotion-evidence.json
+
+  python315-container:
+    name: Python 3.15 container compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install full application dependencies and build runtime image
+        run: docker build --tag aws-sagemaker-snowflake:python315 .
+      - name: Verify runtime Python version
+        run: |
+          docker run --rm --entrypoint python aws-sagemaker-snowflake:python315 \\
+            -c "import sys; assert sys.version_info[:2] == (3, 15)"
