@@ -31,7 +31,7 @@ def test_predict_output():
 
 def test_write_predictions_upserts_without_replacing_table(monkeypatch):
     connection = MagicMock()
-    monkeypatch.setattr(model_inference.snowflake.connector, "connect", MagicMock(return_value=connection))
+    monkeypatch.setattr(model_inference.snowflake.connector, "connect", MagicMock(return_value=connection), raising=False)
 
     model_inference.write_predictions_to_snowflake([101, 102], [0, 1], [0.2, 0.8])
 
@@ -51,7 +51,7 @@ def test_write_predictions_rejects_bad_batch_before_opening_connection(monkeypat
     import pytest
 
     connector = MagicMock()
-    monkeypatch.setattr(model_inference.snowflake.connector, "connect", connector)
+    monkeypatch.setattr(model_inference.snowflake.connector, "connect", connector, raising=False)
     for ids, preds, scores in [
         ([1], [0, 1], [0.2]),
         ([1, 1], [0, 1], [0.1, 0.9]),
