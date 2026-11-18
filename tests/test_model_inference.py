@@ -69,7 +69,7 @@ def test_write_predictions_rolls_back_and_closes_on_error(monkeypatch):
 
     connection = MagicMock()
     connection.cursor.return_value.execute.side_effect = RuntimeError("warehouse error")
-    monkeypatch.setattr(model_inference.snowflake.connector, "connect", MagicMock(return_value=connection))
+    monkeypatch.setattr(model_inference.snowflake.connector, "connect", MagicMock(return_value=connection), raising=False)
 
     with pytest.raises(RuntimeError, match="warehouse error"):
         model_inference.write_predictions_to_snowflake([101], [1], [0.75])
